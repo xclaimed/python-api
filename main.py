@@ -5,6 +5,21 @@ from typing import Optional
 
 app = FastAPI()
 
+# Variable to store all the posts created by the user temporally in the memory rather than in database.
+# For testing purposes.
+all_posts = [
+    {
+        "title": "Title of post 1",
+        "content": "Content of post 1",
+        "id": 1
+    },
+    {
+        "title": "Title of post 2",
+        "content": "Content of post 2",
+        "id": 2
+    }
+]
+
 
 # Creating a Schema using pydantic
 # step 1 import BaseModel from pydantic
@@ -28,8 +43,17 @@ async def root():
     return {"message": "Hello World"}
 
 
-@app.post("/create_posts")
+@app.get("/posts")
+def get_posts():
+    """
+    Function to get all the posts of the current user.
+    Returns:
+    """
+    return {"data": all_posts}
+
+
+@app.post("/posts")
 def create_posts(payload: Post):
     print(payload, type(payload))
-    payload.dict()  # This is an pydantic object, so this way we can create this into a python dict object.
+    payload.dict()  # This is a pydantic object, so this way we can create this into a python dict object.
     return {"data": "new post"}

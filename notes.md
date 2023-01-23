@@ -1,5 +1,5 @@
 ## Why do we need Schema
-- Its hard to get all the values from the body.
+- It's hard to get all the values from the body.
 - The client can send whatever data they want.
 - The data isn't getting validated.
 - We ultimately want to force the client to send data in a schema that we expect.
@@ -23,4 +23,21 @@ class Post(BaseModel):
 
 ```
 Pydantic performs self validation, which means if we do not supply the arguments then it will automatically throw an error and if value is passed then it will perform type checking, throw error's if found.
+
+# CRUD
+Crud is an acronym that represents 4 main functions of an application.
+
+| Property | Method    | endpoint   | url                     |
+|----------|-----------|------------|-------------------------|
+| Create   | POST      | /posts     | @app.post("/posts")     |
+| Read     | GET       | /posts/:id | @app.get("/posts/{id}"  |
+| Read     | GET       | /post      | @app.get("/posts")      |
+| Update   | PUT/PATCH | /post/:id  | @app.put("/posts/{id}") |
+| Delete   | DELETE    | /post/:id  | @app.delete(/post/{id}) |
+
+
+# Certain best practices we need to follow:
+- Naming the urls and the paths for each operation there is a standard convention, Since we are working with social media posts, so it makes sense to name all the urls or all the paths with `/posts`. It's important to use plural form of post, it is a standard convention for apis. If we were working with users then the path to be use should be `/users`.
+
+In PUT method, all the fields have to be sent for updating the post and in PATCH method we can send just the specific field that we want to change.
 
