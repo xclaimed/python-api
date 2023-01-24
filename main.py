@@ -59,15 +59,10 @@ def get_posts():
     return {"data": all_posts}
 
 
-@app.post("/posts")
+@app.post("/posts", status_code=status.HTTP_404_NOT_FOUND)
 def create_posts(payload: Post):
     """
     Create a new post and save that to the database. Return the newly created post.
-    Args:
-        payload:
-
-    Returns:
-
     """
     post_dict = payload.dict()  # This is a pydantic object, so this way we can create this into a python dict object.
     post_dict["id"] = len(all_posts) + 1  # Giving the new post a new and unique ID.

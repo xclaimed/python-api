@@ -87,4 +87,6 @@ def get_post(id):
         )
     return {"post_detail": post}
 ```
+**Changing default status code of a specific path operation.**\
+`@app.post("/posts", status_code=status.HTTP_404_NOT_FOUND)`
 
