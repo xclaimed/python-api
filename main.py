@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-
 from pydantic import BaseModel
 from typing import Optional
+from fastapi import status, HTTPException
 
 app = FastAPI()
 
@@ -83,11 +83,11 @@ def get_post(post_id: int):
     'post_id: int' auto converts the post_id to int, and we don't have to manually do that.
     It also performs the validation i.e. if some invalid integers are passed then it will automatically throw an error.
     "value is not a valid integer"
-    Args:
-        post_id:
-
-    Returns:
-
     """
     post = find_post(post_id)
-    return {f"Post {id}": post}
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: '{post_id}' was not found!"
+        )
+    return {f"Post": post}

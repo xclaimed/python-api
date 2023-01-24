@@ -55,5 +55,36 @@ def get_post_by_post_id(post_id):
 if route **/posts/{post_id}** is placed above the **/posts/latest** then fastapi will never reach the latest route. It will throw an error *latest cannot be converted into integer*. This type of errors occurs when we work with **path parameters**.
 Solution is to move the route above the post_id because /1 will never match /latest.
 
- # Returning 404 if post is not found and changing the error message
-    
+# Returning 404 if post is not found and changing the error message
+```python
+from fastapi import Response, status
+
+@app.get("/posts/{id}")
+def get_post(id: int, response: Response):
+    post = find_post(id)
+    if not post:
+        response.status_code = 404  # here we hardcoded the response.
+        # or 
+        # here we can find a list of https codes use the most appropriate one.
+        response.status_code = status.HTTP_404_NOT_FOUND
+        
+        # Return a custom message
+        return {"message": f"Post with id: '{id}' was not found!!"}
+    return {"post_details": post}
+```
+This was one method of returning an error but this method is little sloppy.
+**Instead we can raise an HTTP exception, built-in exception in fast api where we can pass the specific error code as well as the message so we don't have to hard code all of that.
+
+```python
+from fastapi import status, HTTPException
+
+def get_post(id):
+    post = find_post(id)
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: `{id} was not found!"
+        )
+    return {"post_detail": post}
+```
+
