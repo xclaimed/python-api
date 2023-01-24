@@ -1,5 +1,5 @@
 ## Why do we need Schema
-- It's hard to get all the values from the body.
+- It's hard to get all the values from the body/payload.
 - The client can send whatever data they want.
 - The data isn't getting validated.
 - We ultimately want to force the client to send data in a schema that we expect.
@@ -10,6 +10,7 @@ How we define the data should look like.
 We can use pydantic to define what our Schema should look like.
 
 ```python
+# Creating a schema class using pydantic
 from pydantic import BaseModel
 from typing import Optional
 
@@ -27,7 +28,7 @@ Pydantic performs self validation, which means if we do not supply the arguments
 # CRUD
 Crud is an acronym that represents 4 main functions of an application.
 
-| Property | Method    | endpoint   | url                     |
+| Property | Method    | Endpoint   | Route                   |
 |----------|-----------|------------|-------------------------|
 | Create   | POST      | /posts     | @app.post("/posts")     |
 | Read     | GET       | /posts/:id | @app.get("/posts/{id}"  |

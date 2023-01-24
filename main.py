@@ -37,9 +37,9 @@ class Post(BaseModel):
     rating: Optional[int] = None
 
 
-# In this library, these functions are called Path Operations
+# In this library, these functions are called Path Operations(routes)
 @app.get("/")
-async def root():
+def root():
     return {"message": "Hello World"}
 
 
