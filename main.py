@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.params import Body
+
 from pydantic import BaseModel
 from typing import Optional
 
@@ -37,6 +37,13 @@ class Post(BaseModel):
     rating: Optional[int] = None
 
 
+def find_post(post_id):
+    """Function to find the post in our database using ID."""
+    for post in all_posts:
+        if post["id"] == post_id:
+            return post
+
+
 # In this library, these functions are called Path Operations(routes)
 @app.get("/")
 def root():
@@ -54,6 +61,33 @@ def get_posts():
 
 @app.post("/posts")
 def create_posts(payload: Post):
-    print(payload, type(payload))
-    payload.dict()  # This is a pydantic object, so this way we can create this into a python dict object.
-    return {"data": "new post"}
+    """
+    Create a new post and save that to the database. Return the newly created post.
+    Args:
+        payload:
+
+    Returns:
+
+    """
+    post_dict = payload.dict()  # This is a pydantic object, so this way we can create this into a python dict object.
+    post_dict["id"] = len(all_posts) + 1  # Giving the new post a new and unique ID.
+    all_posts.append(post_dict)
+    return {"data": post_dict}
+
+
+@app.get("/posts/{post_id}")
+def get_post(post_id: int):
+    """
+    Returns the post with the specified post_id. The post_id should be a valid integer.
+    'post_id' is also referred as path parameters.
+    'post_id: int' auto converts the post_id to int, and we don't have to manually do that.
+    It also performs the validation i.e. if some invalid integers are passed then it will automatically throw an error.
+    "value is not a valid integer"
+    Args:
+        post_id:
+
+    Returns:
+
+    """
+    post = find_post(post_id)
+    return {f"Post {id}": post}

@@ -42,3 +42,18 @@ Crud is an acronym that represents 4 main functions of an application.
 
 In PUT method, all the fields have to be sent for updating the post and in PATCH method we can send just the specific field that we want to change.
 
+
+# path parameter
+```python
+@app.get("/posts/{post_id}")
+def get_post_by_post_id(post_id):
+    pass
+```
+
+* The order of the routes matters:
+
+if route **/posts/{post_id}** is placed above the **/posts/latest** then fastapi will never reach the latest route. It will throw an error *latest cannot be converted into integer*. This type of errors occurs when we work with **path parameters**.
+Solution is to move the route above the post_id because /1 will never match /latest.
+
+ # Returning 404 if post is not found and changing the error message
+    
