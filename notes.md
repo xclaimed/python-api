@@ -96,3 +96,9 @@ To get the documentations visit url/docs, this is going to show you the built-in
 There are two type of documentation built in: 
 1. Swagger UI
 2. Redoc
+
+
+## Restructuring our code
+We are going to move our code to a folder called app, so that's going to store all of our application specific code.
+
+Python has a concept of packages and a package is nothing more than a fancy name for a folder. However, something to properly act as a package, python requires you to create a dummy file, this file is called __init__.py.
