@@ -44,6 +44,18 @@ def find_post(post_id):
             return post
 
 
+def find_post_index(post_id):
+    """Delete the post with the required ID."""
+    # find the post in the array that has the required ID and return the index of the post.
+    for index, post in enumerate(all_posts):
+        print(index, post)
+        if post['id'] == post_id:
+            print("we found that")
+            return index, post
+
+    return None, None
+
+
 # In this library, these functions are called Path Operations(routes)
 @app.get("/")
 def root():
@@ -86,3 +98,28 @@ def get_post(post_id: int):
             detail=f"Post with id: '{post_id}' was not found!"
         )
     return {f"Post": post}
+
+
+# deleting a post
+@app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(post_id: int):
+    """
+    Delete a post.
+    """
+    index, post = find_post_index(post_id)
+    print(f"index: {index}, post: {post}")
+    if index is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with ID: '{post_id}' was not found."
+        )
+    all_posts.pop(index)
+
+    # When we delete something we don't generally return something.
+    # return {
+    #     "details": {
+    #         "message": f"Post with ID '{post_id}' was successfully deleted",
+    #         "Post": post
+    #     }
+    # }
+
