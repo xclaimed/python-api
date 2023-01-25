@@ -123,3 +123,20 @@ def delete_post(post_id: int):
     #     }
     # }
 
+
+@app.put("/posts/{post_id}")
+def update_post(post_id: int, payload: Post):
+    index, _ = find_post_index(post_id)
+
+    if index is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with ID: {post_id} was not found."
+        )
+
+    post = payload.dict()
+    post["id"] = post_id
+    all_posts[index] = post
+    return {
+        "post": post
+    }

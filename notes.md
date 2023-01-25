@@ -90,3 +90,9 @@ def get_post(id):
 **Changing default status code of a specific path operation.**\
 `@app.post("/posts", status_code=status.HTTP_404_NOT_FOUND)`
 
+* FastAPI automatically generates the documentation based off the path operations that you've defined.
+To get the documentations visit url/docs, this is going to show you the built-in documentation powered by **Swagger UI**.
+
+There are two type of documentation built in: 
+1. Swagger UI
+2. Redoc
