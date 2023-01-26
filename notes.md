@@ -105,3 +105,27 @@ There are two type of documentation built in:
 We are going to move our code to a folder called app, so that's going to store all of our application specific code.
 
 Python has a concept of packages and a package is nothing more than a fancy name for a folder. However, something to properly act as a package, python requires you to create a dummy file, this file is called __init__.py.
+
+# Database
+Database is a collection of organized data that can be easily accessed and managed. \
+We don't work or interact with database directly. Instead we make use of a software referred to as a **Database Management System(DBMS)**.\
+DBMS is going to sit in the middle. When we want to perform an operation on a database we're going to send that request to a database management system, that database management system is then actually going to perform that operation, and then it's going to send the result back to us.
+
+There are Two major branches of Database:
+* **Relational Databases**
+  * MYSQL
+  * POSTGRESQL
+  * ORACLE
+  * SQL SERVER
+Relational databases are usually sql-base databases.
+
+* **NoSQL**
+  * MongoDB
+  * DynamoDB
+  * ORACLE
+  * SQL SERVER
+
+## SQL
+SQL is a Structured Query Language(SQL) used to communicate with the DBMS.
+
+* When we install postgres, we can carve out multiple separate databases. 
