@@ -128,4 +128,35 @@ Relational databases are usually sql-base databases.
 ## SQL
 SQL is a Structured Query Language(SQL) used to communicate with the DBMS.
 
-* When we install postgres, we can carve out multiple separate databases. 
+* When we install postgres, we can carve out multiple separate databases.
+
+### Tables
+A table represent a subject or event in an application. e.g. table for registered users, table for reviews and table for all the products you have. Therefore, a table represent different subject or event in an application. **All these tables are going to form some sort of relationship, that's why it's referred to as a relational database**.
+
+When it comes to a table it has **Columns and Rows**.
+* Each **Column** represents a different attribute.
+* Each **Row** represents a different entry in the table.
+
+![img.png](meta/imgs/tables_rows.png)
+
+### Postgres DataTypes
+Databases have datatypes just like any programming language. \
+This is important because when you create a column within a table you need to specify what kind of datatype you want to use.
+
+![img.png](meta/imgs/postgres_datatypes.png)
+![img_1.png](meta/imgs/postgres_datatypes_2.png)
+
+### Primary Key
+When we create a table we have to specify something called a **Primary Key**. **Primary Key** is a column or group of columns that uniquely identifies each row in a table. Each table can have one and only one primary key. Primary key can span multiple columns.
+The Primary key does not have to be the ID Column always.
+
+# Constraints
+***
+## Unique Constraints
+A Unique constraint can be applied to any column to make sure every record has a unique value for that column. and if someone tries to add a same value then it will throw an error.
+
+## Null Constraints
+By default, when adding a new entry to a database, any column can be left blank. When a column is left blank, it has a `NULL` value.
+
+If you need column to be properly filled in to create a new record, a `NOT NULL` constraint can be added to the column to ensure that the column is never left blank.
+
