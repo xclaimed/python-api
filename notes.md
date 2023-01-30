@@ -10,7 +10,7 @@ How we define the data should look like.
 We can use pydantic to define what our Schema should look like.
 
 * <mark>TypeHints</mark>
-Type hints is a feature of Python that allows you to explicitly declare the data type of a variable when declaring it.
+Type hints is a feature of Python that allows you to explicitly declare the data type of variable when declaring it.
 
 ```python
 # Creating a schema class using pydantic
@@ -41,7 +41,7 @@ Crud is an acronym that represents 4 main functions of an application.
 
 
 ## Certain best practices we need to follow:
-- Naming the urls and the paths for each operation there is a standard convention, Since we are working with social media posts, so it makes sense to name all the urls or all the paths with `/posts`. It's important to use plural form of post, it is a standard convention for apis. If we were working with users then the path to be use should be `/users`.
+- Naming the urls and the paths for each operation there is a standard convention, Since we are working with social media posts, so it makes sense to name all the urls or all the paths with `/posts`. It's important to use plural form of post, it is a standard convention for apis. If we were working with users then the path to be used should be `/users`.
 
 In PUT method, all the fields have to be sent for updating the post and in PATCH method we can send just the specific field that we want to change.
 
@@ -108,7 +108,7 @@ Python has a concept of packages and a package is nothing more than a fancy name
 
 # Database
 Database is a collection of organized data that can be easily accessed and managed. \
-We don't work or interact with database directly. Instead we make use of a software referred to as a **Database Management System(DBMS)**.\
+We don't work or interact with database directly. Instead, we make use of a software referred to as a **Database Management System(DBMS)**.\
 DBMS is going to sit in the middle. When we want to perform an operation on a database we're going to send that request to a database management system, that database management system is then actually going to perform that operation, and then it's going to send the result back to us.
 
 There are Two major branches of Database:
@@ -116,7 +116,7 @@ There are Two major branches of Database:
   * MYSQL
   * POSTGRESQL
   * ORACLE
-  * SQL SERVER
+  * SQL SERVER \
 Relational databases are usually sql-base databases.
 
 * **NoSQL**
