@@ -160,3 +160,13 @@ By default, when adding a new entry to a database, any column can be left blank.
 
 If you need column to be properly filled in to create a new record, a `NOT NULL` constraint can be added to the column to ensure that the column is never left blank.
 
+## Postgres datatypes
+- integer
+- serial(It increments the value by 1 automatically, and we don't have to manually suplly value.)
+- character varying
+- timestamp with time zone
+- timestamp without time zone
+
+[Datatypes in Postgres](https://www.postgresql.org/docs/current/datatype.html, "Postgres Documentation")
+
+
