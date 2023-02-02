@@ -170,3 +170,66 @@ If you need column to be properly filled in to create a new record, a `NOT NULL`
 [Datatypes in Postgres](https://www.postgresql.org/docs/current/datatype.html, "Postgres Documentation")
 
 
+## First Query
+```sql
+`SELECT * from products;`
+/*This command gives us every single row in the products table. Here ( SELECT ) means to select, ( * ) means to select every column(attribute). We can filter out columns based on our requirements and ( from products(table name)) this gives us all the rows in the table.*/
+
+`SELECT name, id from products;`
+-- This command only returns the name and id column. It is important to note that the column returned are in the same order as the query.
+
+`SELECT name AS producut_name, id AS product_id FROM products;`
+--- Renaming the columns
+
+`SELECT * FROM products WHERE id = 10;`
+--- Filtering result based on some filters.
+
+`SELECT * FROM products WHERE price >= 50;`
+--- Operators in sql
+
+`SELECT * FROM products WHERE inventory != 0;`
+`SELECT * FROM products WHERE inventory <> 0;`
+--- not equal
+
+`SELECT * FROM products WHERE inventory <> 0 AND price >= 30;`
+-- Multiple operators
+
+SELECT * FROM products WHERE id = 1 OR id = 2 OR id = 3;
+SELECT * FROM products WHERE id IN (1, 2, 3);
+--- Returns any matched 
+
+SELECT * FROM products WHERE name LIKE 'TV%';
+--- Match anythings that starts with TV and have anything afterwords. We can actually pass a regex expresion here. '%e' - everything that ends with e.
+
+SELECT * FROM products WHERE NOT LIKE 'TV%';
+--- Match everything that does not starts with 'TV'. '%en%' will match anything that contains en. 
+
+SELECT * FROM products ORDER BY price DESC;
+--- Order result in descending order based on price. Ascending order is default.
+
+SELECT * FROM products ORDER BY inventory DESC, price;
+--- When there is a tie like in inventory the value was 0, then we can order them based on another column.
+
+SELECT * FROM products ORDER BY ID LIMIT 5 OFFSET 5;
+--- Limits the result and can offset(remove the first 5 results).
+
+INSERT INTO products (name, price) VALUES ('ps5', 1000);
+-- Add Item to the table.
+
+INSERT INTO products (name, price) VALUES ('ssd', 250), ('hdd', 100) RETURNING *;
+-- BY default INSERT query only returns the codes not the data. We can filter the column also by ID, price replacint *.
+
+DELETE FROM products WHERE id = 10;
+DELETE FROM products WHERE id = 111 RETURNING *;
+
+
+UPDATE products SET name='myname', price=222 WHERE id = 22 RETURNING *;
+-- update the row.
+
+UPDATE products SET name='myname', price=222 WHERE id > 22 RETURNING *;
+-- Updating multiple values.
+```
+==IMP==
+- In sql captilzation does not matters. `select * FROM products` == `SELECT * from products`
+- Best practice is to Uppercase the sql keywords and lowercase the user provided information. It helps to easily differentiate between sql keywords and user inputs in really long sql queries.
+- Use code when you have to match a string or text or character varying.
