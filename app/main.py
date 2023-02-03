@@ -1,10 +1,9 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import Optional
-from fastapi import status, HTTPException
-import psycopg2
 import time
+import psycopg2
+from typing import Optional
+from pydantic import BaseModel
 from psycopg2.extras import RealDictCursor
+from fastapi import FastAPI, Response, status, HTTPException
 
 app = FastAPI()
 
@@ -15,14 +14,15 @@ class Post(BaseModel):
     This class is going to extend BaseModel class(from pydantic import BaseModel).
     This takes cares of all the validation.
     if some field is empty or not mentioned or some value supplied does not it automatically throws the error.
-    # Creating a Schema using pydantic
-    # step 1 import BaseModel from pydantic
-    # Step 2 define the input fields.
+    Creating a Schema using pydantic
+    step 1 import BaseModel from pydantic
+    Step 2 define the input fields.
     """
     title: str
     content: str
     publish: bool = True  # This is an optional field
     rating: Optional[int] = None
+
 
 # connecting the database
 while True:  # retry if connection failed
@@ -46,30 +46,6 @@ while True:  # retry if connection failed
         time.sleep(10)  # Sleep for 10 seconds before trying again.
 
 
-
-
-
-
-
-def find_post(post_id):
-    """Function to find the post in our database using ID."""
-    for post in all_posts:
-        if post["id"] == post_id:
-            return post
-
-
-def find_post_index(post_id):
-    """Delete the post with the required ID."""
-    # find the post in the array that has the required ID and return the index of the post.
-    for index, post in enumerate(all_posts):
-        print(index, post)
-        if post['id'] == post_id:
-            print("we found that")
-            return index, post
-
-    return None, None
-
-
 # In this library, these functions are called Path Operations(routes)
 @app.get("/")
 def root():
@@ -87,15 +63,16 @@ def get_posts():
     return {'data': posts}
 
 
-@app.post("/posts", status_code=status.HTTP_404_NOT_FOUND)
+@app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_posts(payload: Post):
     """
     Create a new post and save that to the database. Return the newly created post.
     """
-    post_dict = payload.dict()  # This is a pydantic object, so this way we can create this into a python dict object.
-    post_dict["id"] = len(all_posts) + 1  # Giving the new post a new and unique ID.
-    all_posts.append(post_dict)
-    return {"data": post_dict}
+    cursor.execute(""" INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING * """, (payload.title, payload.content, payload.publish))
+    new_post = cursor.fetchone()
+
+    conn.commit()  # saving the changes in the databse.
+    return {"data": new_post}
 
 
 @app.get("/posts/{post_id}")
@@ -107,13 +84,16 @@ def get_post(post_id: int):
     It also performs the validation i.e. if some invalid integers are passed then it will automatically throw an error.
     "value is not a valid integer"
     """
-    post = find_post(post_id)
+    cursor.execute(
+        """SELECT * FROM posts WHERE id = %s""", (str(post_id))
+    )
+    post = cursor.fetchone()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id: '{post_id}' was not found!"
         )
-    return {f"Post": post}
+    return {"post_detail": post}
 
 
 # deleting a post
@@ -122,37 +102,36 @@ def delete_post(post_id: int):
     """
     Delete a post.
     """
-    index, post = find_post_index(post_id)
-    print(f"index: {index}, post: {post}")
-    if index is None:
+    cursor.execute(
+        """ DELETE FROM posts WHERE id = %s RETURNING * """, (str(post_id))
+    )
+    deleted_post = cursor.fetchone()
+    print(deleted_post)
+    if deleted_post is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with ID: '{post_id}' was not found."
         )
-    all_posts.pop(index)
-
+        
+        
+    conn.commit()
     # When we delete something we don't generally return something.
-    # return {
-    #     "details": {
-    #         "message": f"Post with ID '{post_id}' was successfully deleted",
-    #         "Post": post
-    #     }
-    # }
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.put("/posts/{post_id}")
 def update_post(post_id: int, payload: Post):
-    index, _ = find_post_index(post_id)
-
-    if index is None:
+    cursor.execute(
+        """ UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *""", (payload.title, payload.content, payload.publish, str(post_id))
+    )
+    updated_post = cursor.fetchone()
+    conn.commit()
+    if updated_post is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with ID: {post_id} was not found."
         )
 
-    post = payload.dict()
-    post["id"] = post_id
-    all_posts[index] = post
     return {
-        "post": post
+        "post": updated_post
     }
