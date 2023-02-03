@@ -233,3 +233,8 @@ UPDATE products SET name='myname', price=222 WHERE id > 22 RETURNING *;
 - In sql captilzation does not matters. `select * FROM products` == `SELECT * from products`
 - Best practice is to Uppercase the sql keywords and lowercase the user provided information. It helps to easily differentiate between sql keywords and user inputs in really long sql queries.
 - Use code when you have to match a string or text or character varying.
+
+
+# Integrating with Postgres
+When it comes to working with postgres database within a python application, we're going to need a postgres driver. There are many different library, we are going to use pysycopg2
+`pip install psycopg2`

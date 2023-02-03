@@ -2,39 +2,53 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional
 from fastapi import status, HTTPException
+import psycopg2
+import time
+from psycopg2.extras import RealDictCursor
 
 app = FastAPI()
 
-# Variable to store all the posts created by the user temporally in the memory rather than in database.
-# For testing purposes.
-all_posts = [
-    {
-        "title": "Title of post 1",
-        "content": "Content of post 1",
-        "id": 1
-    },
-    {
-        "title": "Title of post 2",
-        "content": "Content of post 2",
-        "id": 2
-    }
-]
 
-
-# Creating a Schema using pydantic
-# step 1 import BaseModel from pydantic
-# Step 2 define the input fields.
 class Post(BaseModel):
     """
     This is a schema class that will represent how our post schema should look like.
     This class is going to extend BaseModel class(from pydantic import BaseModel).
     This takes cares of all the validation.
     if some field is empty or not mentioned or some value supplied does not it automatically throws the error.
+    # Creating a Schema using pydantic
+    # step 1 import BaseModel from pydantic
+    # Step 2 define the input fields.
     """
     title: str
     content: str
     publish: bool = True  # This is an optional field
     rating: Optional[int] = None
+
+# connecting the database
+while True:  # retry if connection failed
+    try:
+        conn = psycopg2.connect(
+            host='localhost',
+            database='python-api',
+            user='postgres',
+            password='1324',
+            cursor_factory=RealDictCursor
+        )
+
+        cursor = conn.cursor()  # we are going to use this to execute our sql statements.
+        print("Database connection was succesfull!")
+
+        break  # if connection is established
+
+    except Exception as error:
+        print("Connection to the database failed!")
+        print("Error: ", error)
+        time.sleep(10)  # Sleep for 10 seconds before trying again.
+
+
+
+
+
 
 
 def find_post(post_id):
@@ -68,7 +82,9 @@ def get_posts():
     Function to get all the posts of the current user.
     Returns:
     """
-    return {"data": all_posts}
+    cursor.execute("""SELECT * FROM posts""")
+    posts = cursor.fetchall()
+    return {'data': posts}
 
 
 @app.post("/posts", status_code=status.HTTP_404_NOT_FOUND)
