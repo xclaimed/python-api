@@ -238,3 +238,85 @@ UPDATE products SET name='myname', price=222 WHERE id > 22 RETURNING *;
 # Integrating with Postgres
 When it comes to working with postgres database within a python application, we're going to need a postgres driver. There are many different library, we are going to use pysycopg2
 `pip install psycopg2`
+
+### Getting post from the database
+```python
+@app.get("/posts", status_code=status.HTTP_404_NOT_FOUND)
+def get_all_posts():
+    cursor.execute("""SELECT * FROM posts""")
+    posts = cursor.findall()
+    return {'data': posts}
+```
+
+### Creating new post
+You never want to do any string interpolation and then pass in the values Post directly into the database query. Instead what we want to do is, we are going to parametize or sanatize all the data that we put into the sql statement. So that we are not vulerable to sql injection.
+```python
+@app.post("/posts", status_code=status.HTTP_201_CREATED)
+def create_new_post(payload: Post):
+   cursor.execute(
+    """ INSERT INTO posts (title, content, publish) VALUES (%s, %s, %s) RETURNING *""",
+    (payload.title, payload.content, payload.publish)
+   )
+    new_post = cursor.fetchone()
+
+    conn.commit()  # To save data in the database.
+    return {'data', new_post}
+
+```
+
+### Getting post from database
+```python
+@app.post('posts/{post_id}')
+def get_post(post_id: int):
+    # here we validated that the post_id is always an integer.
+
+    cursor.execute("""SELECT * FROM posts WHERE ID = %s)""", (str(post_id),)) # , for any issue
+    # here we converted the post_id back to string becuase it expects id to be a string.
+
+    post = cursor.findone()
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: {post_id} was not found"
+        )
+    return {'post_details': post}
+```
+
+### Deleting post from database
+```python
+@app.delete('posts/{post_id}')
+def delete_post(post_id: int):
+    cursor.execute(
+        """DELETE FROM posts WHERE id = %s""", (str(post_id),)
+    )
+    deleted_post = cursor.fetchone()
+
+    if deleted_post is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Post with id: {post_id} was not found.'
+        )
+
+    conn.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+```
+
+### Updating a post
+```python
+@app.put("/posts/{post_id}")
+def update_post(post_id: int, payload: Post):
+    cursor.execute(
+        """ UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *""", (payload.title, payload.content, payload.publish, str(post_id))
+    )
+    updated_post = cursor.fetchone()
+    conn.commit()
+    if updated_post is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with ID: {post_id} was not found."
+        )
+
+    return {
+        "post": updated_post
+    }
+```
