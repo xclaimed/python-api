@@ -191,7 +191,7 @@ If you need column to be properly filled in to create a new record, a `NOT NULL`
 `SELECT * FROM products WHERE inventory <> 0;`
 --- not equal
 
-`SELECT * FROM products WHERE inventory <> 0 AND price >= 30;`
+SELECT * FROM products WHERE inventory <> 0 AND price >= 30;
 -- Multiple operators
 
 SELECT * FROM products WHERE id = 1 OR id = 2 OR id = 3;
@@ -320,3 +320,37 @@ def update_post(post_id: int, payload: Post):
         "post": updated_post
     }
 ```
+
+# Object Relational Mapper (ORM)
+There are couple of different ways of interacting with the database. One way is using raw sql queries and other is ORM.
+
+ORM is a layer of abstraction that sits between the database and the application. 
+
+We can perform all database operations through tradational python code. No more SQL! So some of the benefits is that we don't actually have to work with sql anymore so instead of using raw sql what we'll do is we'll actually use standard python code calling various functions and method that ultimately translate into sql themselves.
+
+![ORM](meta/imgs/orm.png)
+![ORM](meta/imgs/orm2.png)
+
+- SQLALCHEMY
+Sqlalchemy is one of the most popular python ORMs.
+
+```python
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+
+SQLALCHEMY_DATABASE_URL = 'postgresql//<username>:<password>@<ip-address/hostname>/<database_name>'
+SQLALCHEMY_DATABASE_URL = 'postgresql//postgres:1324@localhost/python-api'
+
+# Creating a engine, engine is responsible for sqlalchemy to connect to a postgres database.
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+
+# To talk to the database we have to make a session
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# We have to define our base class, So all of the model we define to actually create our tables in postgres, they're going to be extending this base class.
+base = declarative_base()
+```
+
+
