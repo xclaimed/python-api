@@ -4,30 +4,15 @@ from typing import Optional
 from pydantic import BaseModel
 from psycopg2.extras import RealDictCursor
 from fastapi import FastAPI, Response, status, HTTPException, Depends
-from . import models
+from . import models, schemas
 from .database import engine, get_db
 from sqlalchemy.orm import Session
+
 
 # Create the database tables
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-
-class Post(BaseModel):
-    """
-    This is a schema class that will represent how our post schema should look like.
-    This class is going to extend BaseModel class(from pydantic import BaseModel).
-    This takes cares of all the validation.
-    if some field is empty or not mentioned or some value supplied does not it automatically throws the error.
-    Creating a Schema using pydantic
-    step 1 import BaseModel from pydantic
-    Step 2 define the input fields.
-    """
-    title: str
-    content: str
-    published: bool = True  # This is an optional field
-    # rating: Optional[int] = None
 
 
 # connecting the database
@@ -70,7 +55,7 @@ def get_posts():
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_posts(payload: Post, db: Session = Depends(get_db)):
+def create_posts(payload: schemas.CreatePost, db: Session = Depends(get_db)):
     """
     Create a new post and save that to the database. Return the newly created post.
     """
@@ -122,7 +107,7 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/posts/{post_id}")
-def update_post(post_id: int, post_data: Post, db: Session = Depends(get_db)):
+def update_post(post_id: int, post_data: schemas.CreatePost, db: Session = Depends(get_db)):
     post_query = db.query(models.Post).filter(models.Post.id == post_id)
     post = post_query.first()
     if post is None:

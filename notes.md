@@ -513,3 +513,28 @@ def update_post(post_id: int, post: Post, db: Session = Depends(get_db)):
     return {'post': post_query.first()}
 
 ```
+
+## Pydantic vs ORM models
+Pydantic
+![Schema Model(Pydantic)](meta/imgs/schema_models.png)
+
+Sqlalchemy Model
+![sqlalchemy Model](meta/imgs/sqlalchemy.png)
+
+
+### Creating more Schemas
+Every different operation can have a different schema.
+
+```python
+# This will be our base class for all the schemas to inherit from.
+class PostBase(BaseModel):
+    title: str
+    content: str
+    published: bool = True
+
+class CreatePost(PostBase):
+    pass
+```
+
+### Creating response schema
+We can define how the request should look like and we can also define how our response should look like.
