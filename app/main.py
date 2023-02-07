@@ -1,6 +1,6 @@
 import time
 import psycopg2
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 from psycopg2.extras import RealDictCursor
 from fastapi import FastAPI, Response, status, HTTPException, Depends
@@ -43,18 +43,17 @@ def root():
     return {"message": "Hello World"}
 
 
-@app.get("/posts")
-def get_posts():
+@app.get("/posts", response_model=List[schemas.Response])
+def get_posts(db: Session = Depends(get_db)):
     """
     Function to get all the posts of the current user.
     Returns:
     """
-    cursor.execute("""SELECT * FROM posts""")
-    posts = cursor.fetchall()
+    posts = db.query(models.Post).all()
     return posts
 
 
-@app.post("/posts", status_code=status.HTTP_201_CREATED)
+@app.get("/posts", status_code=status.HTTP_201_CREATED, response_model=schemas.Response)
 def create_posts(payload: schemas.CreatePost, db: Session = Depends(get_db)):
     """
     Create a new post and save that to the database. Return the newly created post.
@@ -67,7 +66,7 @@ def create_posts(payload: schemas.CreatePost, db: Session = Depends(get_db)):
     return new_post
 
 
-@app.get("/posts/{post_id}")
+@app.post("/posts/{post_id}", response_model=schemas.Response)
 def get_post(post_id: int, db: Session = Depends(get_db)):
     """
     Returns the post with the specified post_id. The post_id should be a valid integer.
@@ -106,7 +105,7 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.put("/posts/{post_id}")
+@app.put("/posts/{post_id}", response_model=schemas.Response)
 def update_post(post_id: int, post_data: schemas.CreatePost, db: Session = Depends(get_db)):
     post_query = db.query(models.Post).filter(models.Post.id == post_id)
     post = post_query.first()

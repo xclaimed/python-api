@@ -442,13 +442,15 @@ def get_db():
         yield db
     finally:
         db.close()
+```
+
+### Get Posts
+```python
 # here, the session object is responsible for talking with the databases, here we created a function (get_db) to get a connection to our database or session to our database, so every time we get a request we're going to get a session, then be able to send sql statements and finally after the request is done then close the session.
-
-
-@app.get('/testingurl')
-def test_posts(db: Session = Depends(get_db)):
+@app.get('/posts')
+def get_posts(db: Session = Depends(get_db)):
     post = db.query(models.Post).all()
-    return {'data': post}
+    return post
 ```
 
 ### Updating Creating post 
@@ -563,3 +565,29 @@ class CreatePost(PostBase):
 
 ### Creating response schema
 We can define how the request should look like and we can also define how our response should look like.
+
+Creating a response schema
+```python
+# schemas.py
+class Response(BaseModel):
+    id: int
+    title: str
+    content: str
+    published: bool
+    created_at: datetime
+
+    # Pydantic response models requires the response to be in a dict.
+    # Pydantic's orm_mode will tell the Pydantic model to read the data even if it is not a dict, but an ORM model (or any other arbitrary object with attributes)
+    class Config:
+        orm_mode = True
+
+
+# Same as above
+class Response(PostBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        orm_mode = True
+```
+[Documentation](https://fastapi.tiangolo.com/tutorial/sql-databases/#use-pydantics-orm_mode)
