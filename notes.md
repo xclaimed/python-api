@@ -334,14 +334,37 @@ We can perform all database operations through tradational python code. No more 
 - SQLALCHEMY
 Sqlalchemy is one of the most popular python ORMs.
 
+
 ```python
+# modles.py
+# Here we are going to store all our models.
+# Every model represents a table in our database
+from .database import Base
+from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.sql.expression import null
+
+
+class Post(Base):
+    __tablename__ = 'posts'
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    title = Column(String, nullable=False)
+    content = Column(String, nullable=False)
+    published = Column(Boolean, server_default='TRUE', nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+```
+
+```python
+# database.py
+
+# Setting up connection with the database
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 
-SQLALCHEMY_DATABASE_URL = 'postgresql//<username>:<password>@<ip-address/hostname>/<database_name>'
-SQLALCHEMY_DATABASE_URL = 'postgresql//postgres:1324@localhost/python-api'
+# SQLALCHEMY_DATABASE_URL = 'postgresql//<username>:<password>@<ip-address/hostname>/<database_name>'
+SQLALCHEMY_DATABASE_URL = 'postgresql://postgres:1324@localhost/python-api'
 
 # Creating a engine, engine is responsible for sqlalchemy to connect to a postgres database.
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -350,7 +373,143 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # We have to define our base class, So all of the model we define to actually create our tables in postgres, they're going to be extending this base class.
-base = declarative_base()
+Base = declarative_base()
 ```
 
+```python
+# models.py
 
+# Here we are going to store all our models.
+# Every model represents a table in our database
+from database import Base
+from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.sql.expression import null
+
+
+class Post(Base):
+    __tablename__ = 'posts'
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    title = Column(String, nullable=False)
+    content = Column(String, nullable=False)
+    published = Column(Boolean, default=False
+```
+
+```python
+# main.py
+
+# Creating our declared models
+from . import models
+from .database import engine, SessionLocal
+from sqlalchemy.orm import session
+from fastapi import Depends
+
+# Create the database tables
+models.Base.metadata.create_all(bind=engine)
+
+app = FastAPI()
+
+
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+# here, the session object is responsible for talking with the databases, here we created a function (get_db) to get a connection to our database or session to our database, so every time we get a request we're going to get a session, then be able to send sql statements and finally after the request is done then close the session.
+
+
+@app.get('/testingurl')
+def test_posts(db: Session = Depends(get_db)):
+    post = db.query(models.Post).all()
+    return {'data': post}
+```
+
+### Updating Creating post 
+```python
+# main.py
+@app.post('/posts')
+def create_posts(post: Post, db: Session = Depends(get_db)):
+    # sql method
+    # cursor.execute(""" INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING * """, (payload.title, payload.content, payload.publish))
+    # new_post = cursor.fetchone()
+
+    # conn.commit()  # saving the changes in the databse.
+
+    # sqlalchemy method
+    # new_post = models.Post(
+    #     title=post.title, content=post.content, published=content.published
+    # )
+    # above line is can also be written as
+    new_post = models.Post(**post.dict())
+    
+    db.add(new_post)
+    db.commit()
+    db.refrest(new_post)
+
+    return {'data': new_post}
+```
+
+### Updating getting posts
+```python
+@app.get('/posts/{post_id}')
+def get_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+        detail='Post with id: {post_id} was not found')
+
+    return {'post': post}
+```
+
+# Updating deleting posts
+```python
+@app.delete('/posts/{post_id}')
+def delete_post(post_id: int, db: Session = Depends(get_db)):
+    # sql
+      # cursor.execute(
+    #     """ DELETE FROM posts WHERE id = %s RETURNING * """, (str(post_id))
+    # )
+    # deleted_post = cursor.fetchone()
+
+    # sqlalchemy
+    post = db.query(models.Post).filter(models.Post.id == post_id)
+
+    if post.first() is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND
+            details=f'post with id: {id} was not found'
+            )
+    db.delete(synchronize_session=False))
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+```
+
+### Updating a post
+```python
+
+@app.put('/posts/{id}')
+def update_post(post_id: int, post: Post, db: Session = Depends(get_db)):
+    # sql
+    # cursor.execute(
+    #     """ UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *""", (payload.title, payload.content, payload.published, str(post_id))
+    # )
+    # updated_post = cursor.fetchone()
+    # conn.commit()
+
+    # sqlalchemy
+    post_query = db.query(models.Post).filter(models.Post.id == post_id) 
+    post = post_query.filter()
+
+    if post is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_POST_NOT_FOUND,
+            detail=f'Post with id: {post_id} was not found.'
+        )
+
+    post_query.update(post.dict(), synchronize_session=False)
+    db.commit()
+    return {'post': post_query.first()}
+
+```
