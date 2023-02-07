@@ -15,26 +15,26 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 
-# connecting the database
-while True:  # retry if connection failed
-    try:
-        conn = psycopg2.connect(
-            host='localhost',
-            database='python-api',
-            user='postgres',
-            password='1324',
-            cursor_factory=RealDictCursor
-        )
+# # connecting the database
+# while True:  # retry if connection failed
+#     try:
+#         conn = psycopg2.connect(
+#             host='localhost',
+#             database='python-api',
+#             user='postgres',
+#             password='1324',
+#             cursor_factory=RealDictCursor
+#         )
 
-        cursor = conn.cursor()  # we are going to use this to execute our sql statements.
-        print("Database connection was succesfull!")
+#         cursor = conn.cursor()  # we are going to use this to execute our sql statements.
+#         print("Database connection was succesfull!")
 
-        break  # if connection is established
+#         break  # if connection is established
 
-    except Exception as error:
-        print("Connection to the database failed!")
-        print("Error: ", error)
-        time.sleep(10)  # Sleep for 10 seconds before trying again.
+#     except Exception as error:
+#         print("Connection to the database failed!")
+#         print("Error: ", error)
+#         time.sleep(10)  # Sleep for 10 seconds before trying again.
 
 
 # In this library, these functions are called Path Operations(routes)
@@ -51,7 +51,7 @@ def get_posts():
     """
     cursor.execute("""SELECT * FROM posts""")
     posts = cursor.fetchall()
-    return {'data': posts}
+    return posts
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
@@ -64,7 +64,7 @@ def create_posts(payload: schemas.CreatePost, db: Session = Depends(get_db)):
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return {"data": new_post}
+    return new_post
 
 
 @app.get("/posts/{post_id}")
@@ -82,7 +82,7 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id: '{post_id}' was not found!"
         )
-    return {"post_detail": post}
+    return post
 
 
 # deleting a post
@@ -120,4 +120,4 @@ def update_post(post_id: int, post_data: schemas.CreatePost, db: Session = Depen
     
     db.commit()
 
-    return { "post": post_query.first()}
+    return post_query.first()

@@ -239,6 +239,31 @@ UPDATE products SET name='myname', price=222 WHERE id > 22 RETURNING *;
 When it comes to working with postgres database within a python application, we're going to need a postgres driver. There are many different library, we are going to use pysycopg2
 `pip install psycopg2`
 
+## Connecting with database
+```py
+# connecting the database
+while True:  # retry if connection failed
+    try:
+        conn = psycopg2.connect(
+            host='localhost',
+            database='python-api',
+            user='postgres',
+            password='1324',
+            cursor_factory=RealDictCursor
+        )
+
+        cursor = conn.cursor()  # we are going to use this to execute our sql statements.
+        print("Database connection was succesfull!")
+
+        break  # if connection is established
+
+    except Exception as error:
+        print("Connection to the database failed!")
+        print("Error: ", error)
+        time.sleep(10)  # Sleep for 10 seconds before trying again.
+
+```
+
 ### Getting post from the database
 ```python
 @app.get("/posts", status_code=status.HTTP_404_NOT_FOUND)
