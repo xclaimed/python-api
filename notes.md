@@ -591,3 +591,52 @@ class Response(PostBase):
         orm_mode = True
 ```
 [Documentation](https://fastapi.tiangolo.com/tutorial/sql-databases/#use-pydantics-orm_mode)
+
+
+# Authentication ans Users
+
+## Creating a table for user
+```python
+# models.py
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    email = Column(String, nullable=False, unique=True)  # unique = True will prevent user from registering twice with one email
+    password = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+```
+
+Schema for create_user.
+```python
+# schemas.py
+from pydantic import BaseModel, EmailStr
+
+
+class CreateUser(BaseModel):
+    # email: str
+    # We can also check for valid emails, with the email-validator that is included with the pydantic module.
+    email: EmailStr
+    password: str
+
+class CreateUserResponse(BaseModel):
+    id: int
+    email: EmailStr
+
+    class Config:
+        orm_mode = True
+
+```
+
+Creating a New path operation for creating a user
+```python
+# main.py
+@app.post('/users', status=status.HTTP_201_CREATED)
+def create_user(user_data: schemas.CreateUser, db: Session = Depends(get_db)):
+    new_user = models.User(**user_data.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
+```
