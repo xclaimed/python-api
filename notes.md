@@ -595,7 +595,8 @@ class Response(PostBase):
 
 # Authentication ans Users
 
-## Creating a table for user
+## Adding a user
+### Creating a table for user
 ```python
 # models.py
 class User(Base):
@@ -607,7 +608,7 @@ class User(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
 ```
 
-Schema for create_user.
+### Schema for create_user.
 ```python
 # schemas.py
 from pydantic import BaseModel, EmailStr
@@ -628,7 +629,7 @@ class CreateUserResponse(BaseModel):
 
 ```
 
-Creating a New path operation for creating a user
+### Creating a New path operation for creating a user
 ```python
 # main.py
 @app.post('/users', status=status.HTTP_201_CREATED)
@@ -640,3 +641,108 @@ def create_user(user_data: schemas.CreateUser, db: Session = Depends(get_db)):
 
     return new_user
 ```
+
+### Hashing user password
+So when it comes to working with password in databases we always hash the password, we never store the actual password in our database.
+[FastAPI Documentation](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/#install-passlib)
+
+`pip install "passlib[bcrypt]"`
+
+```python
+# main.py
+from passlib.context import CryptoContext
+
+# passlib config
+# This is telling passlib to use bcrypt algorithm
+pwd_context = CryptoContext(schemas=["bcrypt"], deprecated="auto")
+
+@app.post('/users', status=status.HTTP_201_CREATED)
+def create_user(user_data: schemas.CreateUser, db: Session = Depends(get_db)):
+    hashed_password = pwd_context.hash(user_data.password)
+    user_data.password = hashed_password
+    new_user = models.User(**user_data.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
+```                                                                  
+
+Get user details with id
+```py
+# main.py
+@app.get('/users/{id}', response_model=schemas.UserResponse)
+def get_user(id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id: {id} does not exist"
+            )
+
+    return user
+```
+
+## Routers
+We are going to see routers, to split up all of our path operations so that we can organize our code.
+
+```py
+# user.py, post.py
+from fastapi import APIRouter
+
+router = APIRouter(
+    # Adding prefix so we dont have to enter the same url repeatedly
+    prefix='/users', # now we replace /users with /
+    tag=['User'] # to group the documentation
+)
+
+# replace all app. pathoperations with router.
+router.get('/{id}')
+
+# main.py
+from .routers import post, user
+
+app.include_router(post.router)
+app.include_router(user.router)
+```
+
+## Authentication
+There are two main ways to tackle authentication:
+- Session Based Authentication
+The idea behind session is that we store something on our backend server to track whether a user logged in.
+- JWT Token Authentication
+The idea behind JWT token authentication is that it's stateless, i.e. there's nothing on our backend. JWT is stored on our client that acutally keeps tracks of whether user is logged in or not.
+
+```py
+# utils.py
+def verify(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+# schemas.py
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+# auth.py
+
+router = APIRouter(tags=['Authentication'])
+
+@router.post('/login')
+def user_login(user_credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
+    user = db.query(models.User).filter(models.User.email == user_credentials.email).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid Credentials"
+            )
+
+    if not utils.verify(user_credentials.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid Credentials"
+        )
+
+```
+

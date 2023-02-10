@@ -38,9 +38,14 @@ class CreateUser(BaseModel):
     email: EmailStr
     password: str
 
-class createUserResponse(BaseModel):
+class UserResponse(BaseModel):
     id: int
     email: EmailStr
-
+    created_at: datetime
     class Config:
         orm_mode = True
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
