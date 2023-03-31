@@ -1,3 +1,4 @@
+from typing import Optional, Union
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
@@ -26,12 +27,6 @@ class PostBase(BaseModel):
 class CreatePost(PostBase):
     pass
 
-class Response(PostBase):
-    id: int
-    created_at: datetime
-    
-    class Config:
-        orm_mode = True
 
 
 class CreateUser(BaseModel):
@@ -42,6 +37,7 @@ class UserResponse(BaseModel):
     id: int
     email: EmailStr
     created_at: datetime
+
     class Config:
         orm_mode = True
 
@@ -49,3 +45,20 @@ class UserResponse(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+# Sending back the responses.
+class PostResponse(PostBase):
+    id: int
+    created_at: datetime
+    author_id: int
+    author: UserResponse    
+    class Config:
+        orm_mode = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    id: Union[str, None] = None

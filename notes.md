@@ -1,3 +1,47 @@
+- [Schema](#schema)
+  - [Why do we need Schema](#why-do-we-need-schema)
+  - [what is Schema](#what-is-schema)
+- [CRUD](#crud)
+  - [Certain best practices we need to follow:](#certain-best-practices-we-need-to-follow)
+- [path parameter](#path-parameter)
+    - [Returning 404 if post is not found and changing the error message](#returning-404-if-post-is-not-found-and-changing-the-error-message)
+  - [Restructuring our code](#restructuring-our-code)
+- [Database](#database)
+  - [SQL](#sql)
+    - [Tables](#tables)
+    - [Postgres DataTypes](#postgres-datatypes)
+    - [Primary Key](#primary-key)
+- [Constraints](#constraints)
+  - [Unique Constraints](#unique-constraints)
+  - [Null Constraints](#null-constraints)
+  - [Postgres datatypes](#postgres-datatypes-1)
+  - [First Query](#first-query)
+- [Integrating with Postgres](#integrating-with-postgres)
+  - [Connecting with database](#connecting-with-database)
+    - [Getting post from the database](#getting-post-from-the-database)
+    - [Creating new post](#creating-new-post)
+    - [Getting post from database](#getting-post-from-database)
+    - [Deleting post from database](#deleting-post-from-database)
+    - [Updating a post](#updating-a-post)
+- [Object Relational Mapper (ORM)](#object-relational-mapper-orm)
+    - [Get Posts](#get-posts)
+    - [Updating Creating post](#updating-creating-post)
+    - [Updating getting posts](#updating-getting-posts)
+- [Updating deleting posts](#updating-deleting-posts)
+    - [Updating a post](#updating-a-post-1)
+  - [Pydantic vs ORM models](#pydantic-vs-orm-models)
+    - [Creating more Schemas](#creating-more-schemas)
+    - [Creating response schema](#creating-response-schema)
+- [Authentication and Users](#authentication-and-users)
+  - [Adding a user](#adding-a-user)
+    - [Creating a table for user](#creating-a-table-for-user)
+    - [Schema for create\_user.](#schema-for-create_user)
+    - [Creating a New path operation for creating a user](#creating-a-new-path-operation-for-creating-a-user)
+    - [Hashing user password](#hashing-user-password)
+  - [Routers](#routers)
+  - [Authentication](#authentication)
+
+# Schema
 ## Why do we need Schema
 - It's hard to get all the values from the body/payload.
 - The client can send whatever data they want.
@@ -32,9 +76,9 @@ Pydantic performs self validation, which means if we do not supply the arguments
 Crud is an acronym that represents 4 main functions of an application.
 
 | Property | Method    | Endpoint   | Route                   |
-|----------|-----------|------------|-------------------------|
+| -------- | --------- | ---------- | ----------------------- |
 | Create   | POST      | /posts     | @app.post("/posts")     |
-| Read     | GET       | /posts/:id | @app.get("/posts/{id}"  |
+| Read     | GET       | /posts/:id | @app.get("/posts/{id}") |
 | Read     | GET       | /post      | @app.get("/posts")      |
 | Update   | PUT/PATCH | /post/:id  | @app.put("/posts/{id}") |
 | Delete   | DELETE    | /post/:id  | @app.delete(/post/{id}) |
@@ -361,16 +405,17 @@ Sqlalchemy is one of the most popular python ORMs.
 
 
 ```python
-# modles.py
+# models.py
 # Here we are going to store all our models.
 # Every model represents a table in our database
 from .database import Base
 from sqlalchemy import Column, Integer, String, Boolean
-from sqlalchemy.sql.expression import null
+from sqlalchemy.sql.expression import null, text
+from sqlalchemy.sql.sqltypes import TIMESTAMP
 
 
 class Post(Base):
-    __tablename__ = 'posts'
+    __tablename__ = 'posts' 
 
     id = Column(Integer, primary_key=True, nullable=False)
     title = Column(String, nullable=False)
@@ -593,7 +638,7 @@ class Response(PostBase):
 [Documentation](https://fastapi.tiangolo.com/tutorial/sql-databases/#use-pydantics-orm_mode)
 
 
-# Authentication ans Users
+# Authentication and Users
 
 ## Adding a user
 ### Creating a table for user
@@ -693,7 +738,7 @@ from fastapi import APIRouter
 
 router = APIRouter(
     # Adding prefix so we dont have to enter the same url repeatedly
-    prefix='/users', # now we replace /users with /
+    prefix='/users', # now we replace /users with 
     tag=['User'] # to group the documentation
 )
 
@@ -707,12 +752,26 @@ app.include_router(post.router)
 app.include_router(user.router)
 ```
 
-## Authentication
+# Authentication
 There are two main ways to tackle authentication:
 - Session Based Authentication
 The idea behind session is that we store something on our backend server to track whether a user logged in.
 - JWT Token Authentication
-The idea behind JWT token authentication is that it's stateless, i.e. there's nothing on our backend. JWT is stored on our client that acutally keeps tracks of whether user is logged in or not.
+The idea behind JWT token authentication is that it's stateless, i.e. there's nothing on our backend. JWT is stored on our client that acutally keeps tracks of whether user is logged in or not. It is stored in the frontend on our client and keep tracks of whether user is logged in or not.
+
+![JWT Token Authentication](meta/imgs/jwt_intro..png)
+Here the api does not track anything, there's no information stored on the api, Instead the client hold on the token and he provides it to us and we verify the token.
+## What JWT token is and what components make up Token?
+![JWT Components](meta/imgs/JWT_components.png)
+JWT token is bunch of cryptic characters but they are not encrypted. Token is make up of 3 inidvidual pieces.
+- Header
+Header includes metadata about the token. We are going to hash(sign) the token so we need to specify the algorithm to use, default is 'HS256', so we've included that in the header.
+- Payload
+Payload is up to you. You can send abosolutely no payload or you can send any piece of information that you want within the payload. We should be carefull what we put in the payload because token itself is not encrypted. Generally put the user_id into the token.
+- Signature
+Signature is a combination of 3 things. Header, Payload and our special password that we keep on our api. So we take all these inforamtion and pass it into the signing algorithm which is 'HS256' and it is going to return a signature. And this signature is important becuase we are going to use this to determine if the token in valid.
+
+**Anyone can see the data of token, anyone can change the data of token they just cannot generate brand new signature because they don't have access to our secret.**
 
 ```py
 # utils.py
@@ -746,3 +805,236 @@ def user_login(user_credentials: schemas.UserLogin, db: Session = Depends(databa
 
 ```
 
+## Creating JWT Token
+`pip install "python-jose[cryptography]"`
+
+```py
+# oauth2.py
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+
+# there will be 3 pieces of information we need to provide to create token
+# SECRET_KEY
+# algorithm - 
+# expiration time - if we return a token with no expiration time that means user is logged in forever
+
+# to get a string like this run:
+# openssl rand -hex 32
+SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+def create_access_token(payload: dict):
+    data = payload.copy()
+
+    expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    jwt_token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt_token
+```
+
+** We are going to make a small change when it comes to retrieving the user's credential.**
+Instead of using our Schema we are going to user built in fastapi utility.
+
+```py
+# routers/auth.py
+from fastapi.security.oauth2 import OAuth2PasswordRequestForm
+
+@router.post('/login')
+def user_login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
+    # we have to send data in form-data format, it will not accept raw data.
+    # Now user_credential will contain two fields only (username, password)
+    user = db.query(models.User).filter(models.User.email == user_credentials.username).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid Credentials"
+            )
+
+    if not utils.verify(user_credentials.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid Credentials"
+        )
+
+    # Create Token
+    access_token = oauth2.create_access_token(data={'user_id': user.id})
+
+    # return token
+    return {"access_token": access_token, "token_type": "bearer"}
+```
+
+## Validating the token
+
+```python
+# oauth2.py
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+from . import schemas
+from fastapi import status, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_schema = OAuth2PasswordBearer(tokenUrl='/login')
+
+# Secret_key
+# to get a string like this run:
+# openssl rand -hex 32
+SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
+
+# Algorithm
+ALGORITHM = "HS256"
+
+# Expiration date
+# expiration date dictates how long a user should be logged in after they perform a login operation
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+
+def create_access_token(data: dict):
+    to_encode = data.copy()  # Creating copy so that orignal data don't get manipulated
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return encoded_jwt
+
+def verify_access_token(token: str, credentials_exception):
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        id: str = payload.get('user_id') # type: ignore  
+
+        if id is None:
+            raise credentials_exception
+        
+        # validating the schema 
+        token_data = schemas.TokenData(id=id)
+    except JWTError:
+        raise credentials_exception
+    
+    return token_data
+
+# We can pass this as a dependency to any of our path operations.
+# it is going to take the token from the request automatically, extract the id
+# verify the token by calling verify_access_token, fetch the user and add it as a 
+# parameter into our path operation function.
+def get_current_user(token: str = Depends(oauth2_schema)):
+    credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+    detail=f'Could not validate credentials',
+    headers={'WWW-Authenticate': 'Bearer'}
+    )
+    return verify_access_token(token, credentials_exception)
+```
+
+## Protecting routes
+```python
+from .. import oauth
+
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Response)
+def create_posts(payload: schemas.CreatePost, db: Session = Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
+    '''
+    This function(oauth2.get_current_user) is now going to be a dependency. This forces the user to be logged in before they can actually create post.
+    When they hit this endpoint this function is called this function then calls verify_access_token by passing in the tag in the token which comes from the user.
+    Then we first decode the token, extract the id. If no id then we throw an error, then we validate the schema and then return the extracted token data.
+    '''
+    pass
+```
+
+
+# Relationship
+How we create relationship in relational database?
+We create an extra column(user_id) in our database(post). Then we are going to set up a foreign key. A foreign key is how we tell sql that this column is connected to another table. Here we specify two things, first the table(user table) that is should be connected to and then we specify what specific column(id column) it should use from that table.
+
+whatever user creates this post we just embed the id of the user.
+![One To Many Relationship](meta/imgs/one_to_many_relationship.png)
+
+```py
+# models.py
+
+class Post(Base):
+    __tablename__ = 'posts'
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    title = Column(String, nullable=False)
+    content = Column(String, nullable=False)
+    published = Column(Boolean, server_default='TRUE', nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    author_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)  # changed
+
+# schemas.py
+# Sending back the responses.
+class PostResponse(PostBase):
+    id: int
+    created_at: datetime
+    author_id: int
+    
+    class Config:
+        orm_mode = True
+
+
+# routes/post.py
+# add user
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
+def create_posts(payload: schemas.CreatePost, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    new_post = model.Post(author_id=current_user.id, **payload)
+
+# delete user
+@router.delete('/{post_id}', status_code=status.HTTP_204_NO_CONTENT, response_model=schemas.PostResponse)
+def delete_post(post_id: int, db: Session = Depends(get_db), current_user: models.Post = Depends(oauth2.get_current_user)):
+    post_query = db.query(models.Post).filter(models.Post.id == post_id)
+    post = post_query.first()
+
+    if post is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: {post_id} was not found.",
+        )
+    
+    if post.author_id != current_user.id: # changed
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Not authorized to perform requested action"
+        )
+    post_query.delete(synchornize_session=False)
+```
+
+# SQLalchemy Relationship
+This relationship is not a foreign key, id does nothing in the database whatsoever, but it tells sqlalchemy to automatically fetch some piece of information based off the relationship. This has no effect on our database.
+```py
+# models.py
+class Post(Base):
+    __tablename__ = 'posts'
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    title = Column(String, nullable=False)
+    content = Column(String, nullable=False)
+    published = Column(Boolean, server_default='TRUE', nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    author_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    author = relationship('User')  # we pass the sqlalchemy class, this is going to return class of another model
+    # So this creates another property automatically for our post. so when we retrieve a post it's going to return a author property. SO it's going to fetch the user based off the author_id and return that for us.
+
+# schemas.py
+# Sending back the responses.
+class PostResponse(PostBase):
+    id: int
+    created_at: datetime
+    author_id: int
+    author: UserResponse    
+    class Config:
+        orm_mode = True
+
+```
+
+# Query Parameters
+Query Parameters are optional key value pairs that appears to the right of the question mark. These query parameters allows to filter the result of a request like show post with 100 likes, show post that are created within 2 hours.
+
+```py
+# post.py
+@router.get('/', response_model=List[schemas.PostResponse])
+def get_post(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, search: str = ''):
+    posts = db.query(models.Post).filter(models.Post.contains(search).limit(limit).offset(skip)).all()
+    return posts
+```
