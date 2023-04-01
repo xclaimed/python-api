@@ -1,13 +1,8 @@
-import time
-import psycopg2
-from typing import Optional, List
-from pydantic import BaseModel
-from psycopg2.extras import RealDictCursor
-from fastapi import FastAPI, Response, status, HTTPException, Depends
-from . import models, schemas, utils
-from .database import engine, get_db
+from fastapi import FastAPI
+from . import models
+from .database import engine
 from .routers import post, user, auth
-
+from .config import settings
 
 # Create the database tables
 models.Base.metadata.create_all(bind=engine)

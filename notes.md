@@ -1038,3 +1038,39 @@ def get_post(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, sear
     posts = db.query(models.Post).filter(models.Post.contains(search).limit(limit).offset(skip)).all()
     return posts
 ```
+spacing in url `?search=robin%20hood`.
+
+# Environment Variable
+.env file is going to contain all of our environment vairables. So we can set much easier just by having a file do all the work. In production we're not going to use this, in production we are going to actually set these on our machines.
+```py
+# .env
+DATABASE_HOSTNAME=localhost
+DATABASE_PORT=5432
+DATABASE_PASSWORD=1324
+DATABASE_NAME=fastapi
+DATABASE_USERNAME=postgres
+SECRET_KEY=09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTS=30
+
+# config.py
+from pydantic import BaseSettings
+
+
+class Settings(BaseSettings):
+    database_hostname: str
+    database_port: str = '5432'
+    database_password: str
+    database_name: str
+    database_username: str
+    secret_key: str
+    algorithm: str
+    access_token_expire_minutes: int
+
+    # telling pydantic to import it from .env file
+    class Config:
+        env_file = '.env'
+
+
+settings = Settings()
+```
