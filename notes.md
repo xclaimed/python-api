@@ -1074,3 +1074,176 @@ class Settings(BaseSettings):
 
 settings = Settings()
 ```
+
+# Voting
+## Composite Key
+Composite key is a *primary key* that spans multiple columns. Since primary keys must be unique, this will ensure no user can like a post twice.
+```sql
+-- sql statement to create composite key
+CREATE TABLE public."VOtes"
+(
+    post_id integer,
+    user_id integer,
+    PRIMARY KEY (post_id, user_id),
+    CONSTRAINT votes_posts_fk FOREIGN KEY (post_id)
+        REFERENCES public.posts (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
+        NOT VALID,
+    CONSTRAINT votes_user_fk FOREIGN KEY (user_id)
+        REFERENCES public.users (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
+        NOT VALID
+);
+
+ALTER TABLE IF EXISTS public."VOtes"
+    OWNER to postgres;
+```
+
+## Adding Vote Route
+```python
+# schema.py
+# models.py
+# votes model
+class Vote(Base):
+    __tablename__ = 'votes'
+
+    post_id = Column(Integer, ForeignKey('posts.id', ondelete='CASCADE'), primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+
+# vote schema
+from pydantic import conint
+
+class Vote(Base):
+    __tablename__ = 'votes'
+
+    post_id = Column(Integer, ForeignKey('posts.id', ondelete='CASCADE'), primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+
+# routes/vote.py
+@router.post('/', status_code=status.HTTP_201_CREATED)
+def vote(payload: schemas.Vote, db: Session = Depends(database.get_db),
+         current_user: models.User = Depends(oauth2.get_current_user)):
+  # if post does not exist
+    post = db.query(models.Post).filter(models.Post.id == payload.post_id).first()
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Post with id {payload.post_id} does not exist'
+        )
+    # this query returns if the user have already liked the post or not.
+    vote_query = db.query(models.Vote).filter(
+        models.Vote.post_id == payload.post_id,
+        models.Vote.user_id == current_user.id
+    )
+    voted = vote_query.first()
+    if payload.dir == 1:
+        # if dir is 1 create vote
+        if voted:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"User {current_user.id} has already voted on post {payload.post_id}"
+            )
+        else:
+            # Create vote
+            new_vote = models.Vote(
+                post_id=payload.post_id,
+                user_id=current_user.id
+            )
+            db.add(new_vote)
+            db.commit()
+            return {"message": 'Successfully added Vote'}
+    else:
+        if not voted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Vote does not exist'
+            )
+        vote_query.delete()
+        db.commit()
+        return {'messge': 'Successfully deleted Vote'}
+```
+
+## Returning no of votes to a post in get post
+### Getting information from two different tables at same time
+We do this by using 'join'.
+`SELECT * FROM posts LEFT JOIN users ON post.author_id = users.id`
+ 
+**Getting number of post by each user**
+`SELECT users.id, COUNT(*) FROM posts RIGHT JOIN users ON posts.author_id = users.id GROUP BY users.id;`
+
+Return table with post with the user liked that
+`SELECT * FROM posts LEFT JOIN votes ON posts.id = votes.post_id;`
+
+Return table with each posts with no of votes
+`SELECT posts.*, COUNT(votes.post_id) AS votes FROM posts LEFT JOIN votes ON posts.id = votes.post_id GROUP BY posts.id;`
+
+Query post with no of votes
+`SELECT posts.*, COUNT(votes.post_id) AS votes FROM posts LEFT JOIN votes ON posts.id = votes.post_id WHERE posts.id = 13 GROUP BY posts.id;`
+
+### Perfoming joins using ORM
+```python
+# schemas.py
+class PostOut(BaseModel):
+    Post: PostResponse
+    votes: int
+
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
+
+# routers/post.py
+@router.get("/", response_model=List[schemas.PostOut])
+def get_posts(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, search: str = ''):
+    """
+    Function to get all the posts of the current user.
+    Returns:
+    """
+    posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+    results = db.query(models.Post, func.count(models.Vote.post_id).label('votes')).join(
+        models.Vote, models.Vote.post_id == models.Post.id, isouter=True
+    ).group_by(models.Post.id).all()
+
+    return results
+```
+
+### Adding filters
+```python
+@router.get("/", response_model=List[schemas.PostOut])
+def get_posts(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, search: str = ''):
+    """
+    Function to get all the posts of the current user.
+    Returns:
+    """
+    results = db.query(models.Post, func.count(models.Vote.post_id).label('votes')).join(
+        models.Vote, models.Vote.post_id == models.Post.id, isouter=True
+    ).group_by(models.Post.id).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+
+    return results
+```
+
+### Get single post
+```python
+@router.post("/{post_id}", response_model=schemas.PostOut)
+def get_post(post_id: int, db: Session = Depends(get_db)):
+    """
+    Returns the post with the specified post_id. The post_id should be a valid integer.
+    'post_id' is also referred as path parameters.
+    'post_id: int' auto converts the post_id to int, and we don't have to manually do that.
+    It also performs the validation i.e. if some invalid integers are passed then it will automatically throw an error.
+    "value is not a valid integer"
+    """
+    # post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    post = db.query(models.Post, func.count(models.Vote.post_id).label('votes')).join(
+        models.Vote, models.Vote.post_id == models.Post.id, isouter=True
+    ).group_by(models.Post.id).filter(models.Post.id == post_id).first()
+
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: '{post_id}' was not found!"
+        )
+    return post
+```
+

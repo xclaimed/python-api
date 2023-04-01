@@ -4,7 +4,7 @@ from . import schemas, database, models
 from sqlalchemy.orm import Session
 from fastapi import status, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from config import settings
+# from config import settings
 
 oauth2_schema = OAuth2PasswordBearer(tokenUrl='/login')
 
@@ -20,7 +20,8 @@ ALGORITHM = "HS256"
 
 # Expiration date
 # expiration date dictates how long a user should be logged in after they perform a login operation
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes 
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+# settings.access_token_expire_minutes 
 # 60
 
 

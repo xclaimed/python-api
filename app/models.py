@@ -4,8 +4,7 @@ from .database import Base
 from sqlalchemy import Column, ForeignKey, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import null, text
-from sqlalchemy.sql.sqltypes import TIMESTAMP 
-
+from sqlalchemy.sql.sqltypes import TIMESTAMP
 
 
 class Post(Base):
@@ -18,7 +17,9 @@ class Post(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     author_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     author = relationship('User')  # we pass the sqlalchemy class, this is going to return class of another model
-    # So this creates another property automatically for our post. so when we retrieve a post it's going to return a author property. SO it's going to fetch the user based off the author_id and return that for us.
+    # So this creates another property automatically for our post. so when we retrieve a post it's going to return
+    # a author property. SO it's going to fetch the user based off the author_id and return that for us.
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -27,4 +28,10 @@ class User(Base):
     email = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    
+
+
+class Vote(Base):
+    __tablename__ = 'votes'
+
+    post_id = Column(Integer, ForeignKey('posts.id', ondelete='CASCADE'), primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)

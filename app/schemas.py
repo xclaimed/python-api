@@ -1,6 +1,7 @@
-from typing import Optional, Union
-from pydantic import BaseModel, EmailStr
+from typing import Union
+from pydantic import BaseModel, EmailStr, conint
 from datetime import datetime
+
 
 # class Post(BaseModel):
 #     """
@@ -24,14 +25,15 @@ class PostBase(BaseModel):
     content: str
     published: bool = True
 
+
 class CreatePost(PostBase):
     pass
-
 
 
 class CreateUser(BaseModel):
     email: EmailStr
     password: str
+
 
 class UserResponse(BaseModel):
     id: int
@@ -52,13 +54,30 @@ class PostResponse(PostBase):
     id: int
     created_at: datetime
     author_id: int
-    author: UserResponse    
+    author: UserResponse
+
     class Config:
         orm_mode = True
+
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class TokenData(BaseModel):
     id: Union[str, None] = None
+
+
+class Vote(BaseModel):
+    post_id: int
+    dir: conint(le=1)
+
+
+class PostOut(BaseModel):
+    Post: PostResponse
+    votes: int
+
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
